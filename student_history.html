@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Borrowing History - {{ student.student_name }} - Library Management System{% endblock %}
+{% block page_title %}Student Borrowing History{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- Student Header Summary Card -->
+    <div class="custom-card mb-4">
+        <div class="custom-card-body p-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fs-3" style="width: 56px; height: 56px;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1">{{ student.student_name }}</h4>
+                        <div class="d-flex flex-wrap align-items-center gap-2 small">
+                            <span class="badge bg-light text-dark border font-monospace">{{ student.register_number }}</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ student.department_name or 'No Dept' }}</span>
+                            <span class="text-muted">Year {{ student.year_of_study }}</span>
+                            {% if student.email %}<span class="text-muted">&bull; {{ student.email }}</span>{% endif %}
+                            {% if student.phone %}<span class="text-muted">&bull; {{ student.phone }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('issue_book', student_id=student.student_id) }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-up-right me-1"></i> Issue Book to {{ student.student_name }}
+                    </a>
+                    <a href="{{ url_for('list_students') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Students
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan History Table -->
+    <div class="custom-card">
+        <div class="custom-card-header">
+            <h5>
+                <i class="bi bi-journal-text text-primary"></i> 
+                Complete Loan Records 
+                <span class="badge bg-secondary-subtle text-secondary fs-6 ms-2">{{ history|length }} Total Records</span>
+            </h5>
+            <span class="dbms-tag">view_issued_books_details WHERE student_id = ?</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Issue ID</th>
+                        <th>Book Title</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Return Date</th>
+                        <th>Status</th>
+                        <th>Fine Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in history %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">#{{ item.issue_id }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ item.book_title }}</div>
+                            <small class="text-muted font-monospace">ISBN: {{ item.isbn or 'N/A' }}</small>
+                        </td>
+                        <td>{{ item.issue_date|format_date }}</td>
+                        <td>
+                            <span class="{% if item.status == 'Issued' and item.overdue_days > 0 %}text-danger fw-bold{% endif %}">
+                                {{ item.due_date|format_date }}
+                            </span>
+                        </td>
+                        <td>{{ item.return_date|format_date }}</td>
+                        <td>
+                            {% if item.status == 'Issued' %}
+                                {% if item.overdue_days > 0 %}
+                                    <span class="badge-status overdue">
+                                        <i class="bi bi-exclamation-circle-fill"></i> Overdue ({{ item.overdue_days }}d)
+                                    </span>
+                                {% else %}
+                                    <span class="badge-status issued">
+                                        <i class="bi bi-arrow-up-right"></i> Active Loan
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge-status returned">
+                                    <i class="bi bi-check2-circle"></i> Returned
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.calculated_fine > 0 %}
+                                <div class="fw-semibold text-danger">{{ item.calculated_fine|currency }}</div>
+                                <small class="badge {% if item.payment_status == 'Paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    {{ item.payment_status }}
+                                </small>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if item.status == 'Issued' %}
+                            <form method="POST" action="{{ url_for('return_book', issue_id=item.issue_id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-primary" 
+                                        onclick="return confirm('Confirm returning {{ item.book_title }}?');">
+                                    <i class="bi bi-arrow-down-left me-1"></i> Return
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-success small fw-semibold"><i class="bi bi-check-circle me-1"></i> Completed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                            No borrowing records found for this student.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

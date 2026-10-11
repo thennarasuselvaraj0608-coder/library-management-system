@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Issue Book - Library Management System{% endblock %}
+{% block page_title %}Issue Book to Student{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="custom-card">
+                <div class="custom-card-header">
+                    <h5><i class="bi bi-arrow-up-right-circle text-primary"></i> Book Loan Issuance Form</h5>
+                    <a href="{{ url_for('list_issued_books') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-list-check me-1"></i> View Issued Books
+                    </a>
+                </div>
+                <div class="custom-card-body p-4">
+                    <form method="POST" action="{{ url_for('issue_book') }}" novalidate>
+                        
+                        <!-- Book Selection -->
+                        <div class="mb-3">
+                            <label for="book_id" class="form-label">Select Book <span class="text-danger">*</span></label>
+                            <select class="form-select" id="book_id" name="book_id" required>
+                                <option value="">-- Choose Book from Available Stock --</option>
+                                {% for b in books %}
+                                <option value="{{ b.book_id }}" 
+                                        {% if preset_book_id == b.book_id|string %}selected{% endif %}
+                                        {% if b.available_copies <= 0 %}disabled{% endif %}>
+                                    {{ b.title }} &bull; By {{ b.author_name }} ({{ b.available_copies }} of {{ b.total_copies }} copies available)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                <i class="bi bi-shield-check text-success"></i> 
+                                DBMS Trigger Protection: Only books with <code>available_copies > 0</code> can be issued.
+                            </div>
+                        </div>
+
+                        <!-- Student Selection -->
+                        <div class="mb-3">
+                            <label for="student_id" class="form-label">Select Borrower (Student) <span class="text-danger">*</span></label>
+                            <select class="form-select" id="student_id" name="student_id" required>
+                                <option value="">-- Choose Registered Student --</option>
+                                {% for s in students %}
+                                <option value="{{ s.student_id }}" {% if preset_student_id == s.student_id|string %}selected{% endif %}>
+                                    {{ s.student_name }} ({{ s.register_number }}) - Dept: {{ s.department_name or 'N/A' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Foreign key links transaction to <code>students.student_id</code>. Maximum 4 active books allowed.</div>
+                        </div>
+
+                        <!-- Librarian in Charge -->
+                        <div class="mb-3">
+                            <label for="librarian_id" class="form-label">Authorized Librarian</label>
+                            <select class="form-select" id="librarian_id" name="librarian_id">
+                                {% for lib in librarians %}
+                                <option value="{{ lib.librarian_id }}">{{ lib.librarian_name }} (Staff ID #{{ lib.librarian_id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Dates Selection -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="issue_date" class="form-label">Issue Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="issue_date" name="issue_date" 
+                                       value="{{ default_issue_date }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="due_date" class="form-label">Due Return Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="due_date" name="due_date" 
+                                       value="{{ default_due_date }}" required>
+                                <div class="form-text">Default standard loan duration: 14 days.</div>
+                            </div>
+                        </div>
+
+                        <!-- Library Policy Box -->
+                        <div class="alert alert-info d-flex align-items-center gap-3 mb-4">
+                            <i class="bi bi-info-circle-fill fs-4 text-primary"></i>
+                            <div class="small">
+                                <strong>Circulation Rules:</strong> Book inventory is tracked with ACID transactions. 
+                                Overdue returns past the due date incur an automatic fine of <strong>₹5.00 per day</strong>.
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i> Confirm & Issue Book
+                            </button>
+                            <a href="{{ url_for('list_issued_books') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

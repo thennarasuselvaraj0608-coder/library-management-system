@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Automated Library Book Tracking and Management System{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <a href="{{ url_for('dashboard') }}" class="brand">
+                <i class="bi bi-book-half"></i>
+                <span>LibTrack Pro</span>
+            </a>
+
+            <div class="sidebar-nav">
+                <div class="nav-label">Core Modules</div>
+                <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('list_books') }}" class="nav-link {% if request.endpoint in ['list_books', 'add_book', 'edit_book'] %}active{% endif %}">
+                    <i class="bi bi-journal-bookmark"></i>
+                    <span>Books Catalog</span>
+                </a>
+                <a href="{{ url_for('list_students') }}" class="nav-link {% if request.endpoint in ['list_students', 'add_student', 'edit_student', 'student_history'] %}active{% endif %}">
+                    <i class="bi bi-people"></i>
+                    <span>Students</span>
+                </a>
+
+                <div class="nav-label mt-3">Circulation</div>
+                <a href="{{ url_for('issue_book') }}" class="nav-link {% if request.endpoint == 'issue_book' %}active{% endif %}">
+                    <i class="bi bi-arrow-up-right-circle"></i>
+                    <span>Issue Book</span>
+                </a>
+                <a href="{{ url_for('list_issued_books') }}" class="nav-link {% if request.endpoint == 'list_issued_books' %}active{% endif %}">
+                    <i class="bi bi-arrow-down-left-circle"></i>
+                    <span>Issued Books</span>
+                </a>
+
+                <div class="nav-label mt-3">Analytics & DBMS</div>
+                <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>Reports & Queries</span>
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-database-check text-success"></i>
+                    <div>
+                        <div class="fw-semibold text-light" style="font-size: 0.8rem;">library_management_db</div>
+                        <div style="font-size: 0.72rem;">MySQL 8.0 Connected</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle Sidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="topbar-title">{% block page_title %}Library Management System{% endblock %}</h1>
+                </div>
+
+                <div class="topbar-right">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+                        <i class="bi bi-mortarboard me-1"></i> B.Tech AI & Data Science
+                    </span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle fs-6"></i>
+                            <span>Librarian</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><span class="dropdown-header">System User</span></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Admin Librarian</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-primary" href="{{ url_for('reports', tab='dbms') }}"><i class="bi bi-code-slash me-2"></i> DBMS Concepts</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Body -->
+            <main class="content-body">
+                <!-- Flash Notification Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="container-fluid px-0 mb-3">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm d-flex align-items-center gap-2" role="alert">
+                                    {% if category == 'success' %}
+                                        <i class="bi bi-check-circle-fill fs-5"></i>
+                                    {% elif category == 'danger' %}
+                                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                                    {% elif category == 'warning' %}
+                                        <i class="bi bi-exclamation-circle-fill fs-5"></i>
+                                    {% else %}
+                                        <i class="bi bi-info-circle-fill fs-5"></i>
+                                    {% endif %}
+                                    <div class="flex-grow-1">{{ message }}</div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}
+                    {% if not_found %}
+                        <div class="text-center py-5">
+                            <h1 class="display-1 text-muted">404</h1>
+                            <h3>Page Not Found</h3>
+                            <p class="text-muted">The requested page or resource could not be found.</p>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-primary"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
+                        </div>
+                    {% elif server_error %}
+                        <div class="text-center py-5">
+                            <h1 class="display-1 text-danger">500</h1>
+                            <h3>Database or Server Error</h3>
+                            <p class="text-muted">An error occurred while processing your database request.</p>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-primary"><i class="bi bi-house me-1"></i> Go to Dashboard</a>
+                        </div>
+                    {% endif %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

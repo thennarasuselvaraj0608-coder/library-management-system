@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Library Book Tracking and Management System{% endblock %}
+{% block page_title %}Library Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- Overdue Alert Banner if overdue books exist -->
+    {% if overdue_count > 0 %}
+    <div class="alert alert-warning border-warning d-flex align-items-center justify-content-between p-3 mb-4 shadow-sm" role="alert">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-warning text-dark p-2 rounded-circle fs-5 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div>
+                <h6 class="mb-0 fw-bold text-dark">Overdue Alert: {{ overdue_count }} Book(s) Past Due Date</h6>
+                <small class="text-secondary">Students with overdue books incur a daily late fine of ₹5.00.</small>
+            </div>
+        </div>
+        <a href="{{ url_for('list_issued_books', tab='overdue') }}" class="btn btn-sm btn-outline-dark fw-semibold">
+            View Overdue Books <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- 1. Metric Statistic Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Total Books -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="stat-card primary h-100">
+                <div>
+                    <div class="stat-title">Total Books</div>
+                    <div class="stat-value">{{ total_copies }}</div>
+                    <div class="stat-subtitle text-primary">{{ total_titles }} Unique Titles</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-bookshelf"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Books -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="stat-card success h-100">
+                <div>
+                    <div class="stat-title">Available Books</div>
+                    <div class="stat-value">{{ available_copies }}</div>
+                    <div class="stat-subtitle text-success">Ready on Shelf</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-journal-check"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issued Books -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="stat-card info h-100">
+                <div>
+                    <div class="stat-title">Issued Books</div>
+                    <div class="stat-value">{{ issued_copies }}</div>
+                    <div class="stat-subtitle text-info">Currently on Loan</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-journal-arrow-up"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registered Students -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="stat-card dark h-100">
+                <div>
+                    <div class="stat-title">Students</div>
+                    <div class="stat-value">{{ total_students }}</div>
+                    <div class="stat-subtitle text-secondary">Active Members</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-mortarboard"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Books -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="stat-card danger h-100">
+                <div>
+                    <div class="stat-title">Overdue Books</div>
+                    <div class="stat-value">{{ overdue_count }}</div>
+                    <div class="stat-subtitle text-danger">Requires Action</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-exclamation-diamond"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fines Collected -->
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="stat-card warning h-100">
+                <div>
+                    <div class="stat-title">Fines Collected</div>
+                    <div class="stat-value" style="font-size: 1.45rem;">{{ fines_collected|currency }}</div>
+                    <div class="stat-subtitle text-warning-emphasis">Pending: {{ fines_pending|currency }}</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Action Bar -->
+    <div class="custom-card mb-4">
+        <div class="custom-card-body p-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning-charge-fill text-warning fs-5"></i>
+                    <span class="fw-semibold">Quick Actions:</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('issue_book') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-up-right me-1"></i> Issue Book
+                    </a>
+                    <a href="{{ url_for('list_issued_books') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-arrow-down-left me-1"></i> Return Book
+                    </a>
+                    <a href="{{ url_for('add_book') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i> Add New Book
+                    </a>
+                    <a href="{{ url_for('add_student') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i> Register Student
+                    </a>
+                    <a href="{{ url_for('reports') }}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-bar-chart-line me-1"></i> View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Charts Row -->
+    <div class="row g-3 mb-4">
+        <!-- Chart 1: Books by Category -->
+        <div class="col-lg-5">
+            <div class="custom-card h-100">
+                <div class="custom-card-header">
+                    <h5><i class="bi bi-pie-chart text-primary"></i> Books by Category</h5>
+                    <span class="dbms-tag">GROUP BY category_id</span>
+                </div>
+                <div class="custom-card-body d-flex flex-column align-items-center justify-content-center" style="min-height: 290px;">
+                    <div style="width: 100%; height: 250px;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 2: Issues by Department -->
+        <div class="col-lg-7">
+            <div class="custom-card h-100">
+                <div class="custom-card-header">
+                    <h5><i class="bi bi-bar-chart-fill text-primary"></i> Issues by Department</h5>
+                    <span class="dbms-tag">view_department_issue_stats</span>
+                </div>
+                <div class="custom-card-body" style="min-height: 290px;">
+                    <div style="width: 100%; height: 250px;">
+                        <canvas id="departmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Recent Circulation Activities Table -->
+    <div class="custom-card mb-4">
+        <div class="custom-card-header">
+            <h5><i class="bi bi-clock-history text-primary"></i> Recent Book Issues & Returns</h5>
+            <a href="{{ url_for('list_issued_books') }}" class="btn btn-sm btn-link text-decoration-none">View All Issues &rarr;</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom table-hover">
+                <thead>
+                    <tr>
+                        <th>Issue ID</th>
+                        <th>Book Title</th>
+                        <th>Student</th>
+                        <th>Department</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Fine</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in recent_issues %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">#{{ issue.issue_id }}</td>
+                        <td>
+                            <div class="fw-semibold text-dark">{{ issue.book_title }}</div>
+                            <small class="text-muted">ISBN: {{ issue.isbn or 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <div>{{ issue.student_name }}</div>
+                            <small class="badge bg-light text-secondary border">{{ issue.register_number }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ issue.department_name or '-' }}</span>
+                        </td>
+                        <td>{{ issue.issue_date|format_date }}</td>
+                        <td>
+                            <span class="{% if issue.status == 'Issued' and issue.overdue_days > 0 %}text-danger fw-bold{% endif %}">
+                                {{ issue.due_date|format_date }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if issue.status == 'Issued' %}
+                                {% if issue.overdue_days > 0 %}
+                                    <span class="badge-status overdue">
+                                        <i class="bi bi-exclamation-circle-fill"></i> Overdue ({{ issue.overdue_days }}d)
+                                    </span>
+                                {% else %}
+                                    <span class="badge-status issued">
+                                        <i class="bi bi-arrow-up-right"></i> Active
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge-status returned">
+                                    <i class="bi bi-check2-circle"></i> Returned
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if issue.calculated_fine > 0 %}
+                                <div class="fw-semibold text-danger">{{ issue.calculated_fine|currency }}</div>
+                                <small class="badge {% if issue.payment_status == 'Paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    {{ issue.payment_status }}
+                                </small>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if issue.status == 'Issued' %}
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#returnBookModal"
+                                    data-issue-id="{{ issue.issue_id }}"
+                                    data-book-title="{{ issue.book_title }}"
+                                    data-student-name="{{ issue.student_name }}"
+                                    data-reg-no="{{ issue.register_number }}"
+                                    data-due-date="{{ issue.due_date|format_date }}"
+                                    data-overdue-days="{{ issue.overdue_days }}"
+                                    data-fine="{{ issue.calculated_fine }}">
+                                <i class="bi bi-arrow-down-left me-1"></i> Return
+                            </button>
+                            {% else %}
+                            <span class="text-success small fw-semibold"><i class="bi bi-check-all"></i> Done</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+                            No book issue transactions found yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Return Book Modal -->
+<div class="modal fade" id="returnBookModal" tabindex="-1" aria-labelledby="returnBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="returnBookForm" method="POST" action="">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="returnBookModalLabel">
+                        <i class="bi bi-arrow-down-left-circle me-1"></i> Process Book Return
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="text-muted small">Book Title</label>
+                        <h6 class="fw-bold mb-0 text-dark" id="modalBookTitle">-</h6>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="text-muted small">Borrower</label>
+                            <div class="fw-semibold" id="modalStudent">-</div>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small">Due Date</label>
+                            <div class="fw-semibold" id="modalDueDate">-</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small">Status</label>
+                        <div id="modalOverdueBadge"></div>
+                    </div>
+
+                    <!-- Overdue Fine Alert Box -->
+                    <div class="alert alert-warning p-3 border-warning" id="modalFineSection" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold text-dark d-block">Overdue Fine Incurred:</span>
+                                <small class="text-secondary">Rate: ₹5.00 / day overdue</small>
+                            </div>
+                            <span class="fs-4 fw-bold text-danger" id="modalFineAmount">₹0.00</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="paidNowSwitch" name="paid_now" value="yes" checked>
+                            <label class="form-check-label fw-semibold text-dark" for="paidNowSwitch">
+                                Fine paid in cash / UPI right now
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-light p-3 rounded small text-secondary">
+                        <i class="bi bi-info-circle me-1 text-primary"></i>
+                        Returning this book will automatically increment its available copies count by 1 in the database.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2-circle me-1"></i> Confirm Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

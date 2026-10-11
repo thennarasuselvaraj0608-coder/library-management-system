@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Book - Library Management System{% endblock %}
+{% block page_title %}Add New Book to Inventory{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="custom-card">
+                <div class="custom-card-header">
+                    <h5><i class="bi bi-journal-plus text-primary"></i> Book Information Form</h5>
+                    <a href="{{ url_for('list_books') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Catalog
+                    </a>
+                </div>
+                <div class="custom-card-body p-4">
+                    <form method="POST" action="{{ url_for('add_book') }}" novalidate>
+                        
+                        <!-- Book Title -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Book Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" required 
+                                   placeholder="e.g. Artificial Intelligence: A Modern Approach">
+                            <div class="form-text">Full title as printed on the book cover.</div>
+                        </div>
+
+                        <!-- ISBN & Publisher Row -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="isbn" class="form-label">ISBN Code</label>
+                                <input type="text" class="form-control" id="isbn" name="isbn" 
+                                       placeholder="e.g. 978-0134610993">
+                                <div class="form-text">International Standard Book Number (must be unique).</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="publisher" class="form-label">Publisher</label>
+                                <input type="text" class="form-control" id="publisher" name="publisher" 
+                                       placeholder="e.g. Pearson, McGraw-Hill, MIT Press">
+                            </div>
+                        </div>
+
+                        <!-- Author Row with New Author Option -->
+                        <div class="mb-3">
+                            <label for="author_id" class="form-label">Author <span class="text-danger">*</span></label>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <select class="form-select" id="author_id" name="author_id">
+                                        <option value="">-- Select Existing Author --</option>
+                                        {% for author in authors %}
+                                        <option value="{{ author.author_id }}">{{ author.author_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" name="new_author" 
+                                           placeholder="Or type a new author name...">
+                                </div>
+                            </div>
+                            <div class="form-text">Choose from existing database authors or type a new author to automatically insert into authors table.</div>
+                        </div>
+
+                        <!-- Category Row with New Category Option -->
+                        <div class="mb-3">
+                            <label for="category_id" class="form-label">Category / Genre <span class="text-danger">*</span></label>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <select class="form-select" id="category_id" name="category_id">
+                                        <option value="">-- Select Existing Category --</option>
+                                        {% for cat in categories %}
+                                        <option value="{{ cat.category_id }}">{{ cat.category_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" name="new_category" 
+                                           placeholder="Or type a new category...">
+                                </div>
+                            </div>
+                            <div class="form-text">Classifies the book under appropriate academic department or subject.</div>
+                        </div>
+
+                        <!-- Total Copies Row -->
+                        <div class="mb-4">
+                            <label for="total_copies" class="form-label">Total Copies in Stock <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="total_copies" name="total_copies" 
+                                   min="1" max="1000" value="1" required style="max-width: 200px;">
+                            <div class="form-text">
+                                <i class="bi bi-shield-check text-success"></i> 
+                                DBMS CHECK Constraint: <code>total_copies >= 0</code> and <code>available_copies <= total_copies</code>.
+                            </div>
+                        </div>
+
+                        <!-- Form Submission -->
+                        <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i> Save Book to Inventory
+                            </button>
+                            <a href="{{ url_for('list_books') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Register Student - Library Management System{% endblock %}
+{% block page_title %}Register New Student{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="custom-card">
+                <div class="custom-card-header">
+                    <h5><i class="bi bi-person-plus text-primary"></i> Student Registration Form</h5>
+                    <a href="{{ url_for('list_students') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Students
+                    </a>
+                </div>
+                <div class="custom-card-body p-4">
+                    <form method="POST" action="{{ url_for('add_student') }}" novalidate>
+                        
+                        <!-- Register Number & Student Name -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-5">
+                                <label for="register_number" class="form-label">Register / Roll Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control text-uppercase font-monospace" id="register_number" 
+                                       name="register_number" required placeholder="e.g. STU007 or 717822P101">
+                                <div class="form-text">Unique college registration number.</div>
+                            </div>
+                            <div class="col-md-7">
+                                <label for="student_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="student_name" name="student_name" required 
+                                       placeholder="e.g. John Doe">
+                            </div>
+                        </div>
+
+                        <!-- Department & Year of Study -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-7">
+                                <label for="department_id" class="form-label">Department / Branch <span class="text-danger">*</span></label>
+                                <select class="form-select" id="department_id" name="department_id" required>
+                                    <option value="">-- Select Academic Department --</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.department_id }}">{{ dept.department_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="year_of_study" class="form-label">Year of Study <span class="text-danger">*</span></label>
+                                <select class="form-select" id="year_of_study" name="year_of_study" required>
+                                    <option value="1">1st Year (Freshman)</option>
+                                    <option value="2" selected>2nd Year (Sophomore)</option>
+                                    <option value="3">3rd Year (Junior)</option>
+                                    <option value="4">4th Year (Senior)</option>
+                                </select>
+                                <div class="form-text">CHECK constraint: <code>year_of_study BETWEEN 1 AND 4</code></div>
+                            </div>
+                        </div>
+
+                        <!-- Email & Phone -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">College / Personal Email</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       placeholder="e.g. student@college.edu">
+                                <div class="form-text">Must be unique in database.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Contact Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       placeholder="e.g. 9876543210">
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-person-check me-1"></i> Register Student
+                            </button>
+                            <a href="{{ url_for('list_students') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

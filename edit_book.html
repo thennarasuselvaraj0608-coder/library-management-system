@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Book - Library Management System{% endblock %}
+{% block page_title %}Update Book Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="custom-card">
+                <div class="custom-card-header">
+                    <h5><i class="bi bi-pencil-square text-primary"></i> Edit Book #{{ book.book_id }}</h5>
+                    <a href="{{ url_for('list_books') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Catalog
+                    </a>
+                </div>
+                <div class="custom-card-body p-4">
+                    <form method="POST" action="{{ url_for('edit_book', book_id=book.book_id) }}" novalidate>
+                        
+                        <!-- Book Title -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Book Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" required 
+                                   value="{{ book.title }}">
+                        </div>
+
+                        <!-- ISBN & Publisher -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="isbn" class="form-label">ISBN Code</label>
+                                <input type="text" class="form-control" id="isbn" name="isbn" 
+                                       value="{{ book.isbn or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="publisher" class="form-label">Publisher</label>
+                                <input type="text" class="form-control" id="publisher" name="publisher" 
+                                       value="{{ book.publisher or '' }}">
+                            </div>
+                        </div>
+
+                        <!-- Author -->
+                        <div class="mb-3">
+                            <label for="author_id" class="form-label">Author</label>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <select class="form-select" id="author_id" name="author_id">
+                                        <option value="">-- Select Existing Author --</option>
+                                        {% for author in authors %}
+                                        <option value="{{ author.author_id }}" {% if book.author_id == author.author_id %}selected{% endif %}>
+                                            {{ author.author_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" name="new_author" 
+                                           placeholder="Or type a new author name...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-3">
+                            <label for="category_id" class="form-label">Category / Genre</label>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <select class="form-select" id="category_id" name="category_id">
+                                        <option value="">-- Select Existing Category --</option>
+                                        {% for cat in categories %}
+                                        <option value="{{ cat.category_id }}" {% if book.category_id == cat.category_id %}selected{% endif %}>
+                                            {{ cat.category_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" name="new_category" 
+                                           placeholder="Or type a new category...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Copies & Current Borrow Status -->
+                        <div class="mb-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="total_copies" class="form-label">Total Copies in Inventory <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="total_copies" name="total_copies" 
+                                           min="1" max="1000" value="{{ book.total_copies }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">Currently Available on Shelf</label>
+                                    <input type="text" class="form-control bg-light" value="{{ book.available_copies }} copies available" readonly>
+                                </div>
+                            </div>
+                            <div class="form-text mt-2">
+                                <i class="bi bi-info-circle text-primary"></i> 
+                                Available copies will automatically adjust according to loans: 
+                                <code>available_copies = total_copies - currently_issued</code>.
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i> Update Book Details
+                            </button>
+                            <a href="{{ url_for('list_books') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

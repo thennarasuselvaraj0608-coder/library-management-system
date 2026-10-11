@@ -1,0 +1,589 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & DBMS Analytics - Library Management System{% endblock %}
+{% block page_title %}Reports & DBMS Concepts Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- Top Action & Print Bar -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Library Reports & Statistical Audit</h4>
+            <p class="text-muted mb-0 small">Comprehensive SQL reports, fine revenue tracking, and DBMS concept demonstrations.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="bi bi-printer me-1"></i> Print / Save PDF
+            </button>
+            <a href="{{ url_for('issue_book') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Issue Book
+            </a>
+        </div>
+    </div>
+
+    <!-- Fine Revenue Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card info">
+                <div>
+                    <div class="stat-title">Active Loans</div>
+                    <div class="stat-value">{{ active_issued|length }}</div>
+                    <div class="stat-subtitle text-info">Books in circulation</div>
+                </div>
+                <div class="stat-icon-wrapper"><i class="bi bi-journal-arrow-up"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card danger">
+                <div>
+                    <div class="stat-title">Overdue Items</div>
+                    <div class="stat-value">{{ overdue_books|length }}</div>
+                    <div class="stat-subtitle text-danger">Past due date</div>
+                </div>
+                <div class="stat-icon-wrapper"><i class="bi bi-exclamation-triangle"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card success">
+                <div>
+                    <div class="stat-title">Fines Collected</div>
+                    <div class="stat-value" style="font-size: 1.4rem;">{{ fines_summary.total_collected|currency }}</div>
+                    <div class="stat-subtitle text-success">Total revenue realized</div>
+                </div>
+                <div class="stat-icon-wrapper"><i class="bi bi-cash-stack"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card warning">
+                <div>
+                    <div class="stat-title">Pending Fines</div>
+                    <div class="stat-value" style="font-size: 1.4rem;">{{ fines_summary.total_pending|currency }}</div>
+                    <div class="stat-subtitle text-warning-emphasis">{{ fines_summary.pending_count }} Unpaid tickets</div>
+                </div>
+                <div class="stat-icon-wrapper"><i class="bi bi-clock-history"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Navigation Tabs -->
+    <div class="custom-card mb-4 no-print">
+        <div class="custom-card-body p-2">
+            <ul class="nav nav-pills nav-fill gap-1" id="reportTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'issued' %}active{% endif %}" href="{{ url_for('reports', tab='issued') }}">
+                        <i class="bi bi-journal-check me-1"></i> Currently Issued
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'overdue' %}active bg-danger text-white{% endif %}" href="{{ url_for('reports', tab='overdue') }}">
+                        <i class="bi bi-alarm me-1"></i> Overdue Books
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'history' %}active{% endif %}" href="{{ url_for('reports', tab='history') }}">
+                        <i class="bi bi-person-lines-fill me-1"></i> Borrowing History
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'fines' %}active{% endif %}" href="{{ url_for('reports', tab='fines') }}">
+                        <i class="bi bi-receipt me-1"></i> Fine Payment Log
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'analytics' %}active{% endif %}" href="{{ url_for('reports', tab='analytics') }}">
+                        <i class="bi bi-pie-chart-fill me-1"></i> Dept & Category Stats
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'dbms' %}active bg-dark text-white{% endif %}" href="{{ url_for('reports', tab='dbms') }}">
+                        <i class="bi bi-database me-1"></i> DBMS Viva Concepts
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- TAB 1: Currently Issued Books -->
+    {% if tab == 'issued' %}
+    <div class="custom-card">
+        <div class="custom-card-header">
+            <h5><i class="bi bi-journal-arrow-up text-primary"></i> Report: Active Book Issues</h5>
+            <span class="dbms-tag">WHERE status = 'Issued'</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Issue ID</th>
+                        <th>Book Title</th>
+                        <th>Borrower</th>
+                        <th>Department</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Days Left / Overdue</th>
+                        <th class="text-end">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in active_issued %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">#{{ item.issue_id }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ item.book_title }}</div>
+                            <small class="text-muted font-monospace">{{ item.isbn or 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ item.student_name }}</div>
+                            <small class="badge bg-light text-secondary border">{{ item.register_number }}</small>
+                        </td>
+                        <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ item.department_name or '-' }}</span></td>
+                        <td>{{ item.issue_date|format_date }}</td>
+                        <td>{{ item.due_date|format_date }}</td>
+                        <td>
+                            {% if item.overdue_days > 0 %}
+                                <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i> {{ item.overdue_days }} days overdue</span>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-clock me-1"></i> Active</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <span class="badge-status issued"><i class="bi bi-arrow-up-right"></i> Issued</span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center py-4 text-muted">No books currently on loan.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TAB 2: Overdue Books -->
+    {% if tab == 'overdue' %}
+    <div class="custom-card border-danger">
+        <div class="custom-card-header bg-danger-subtle">
+            <h5 class="text-danger"><i class="bi bi-exclamation-octagon-fill text-danger"></i> Report: Overdue Books & Penalties</h5>
+            <span class="dbms-tag">view_overdue_books</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Issue ID</th>
+                        <th>Book Title</th>
+                        <th>Student Name</th>
+                        <th>Department</th>
+                        <th>Due Date</th>
+                        <th>Overdue Days</th>
+                        <th>Accumulated Fine</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in overdue_books %}
+                    <tr>
+                        <td class="fw-semibold text-danger">#{{ item.issue_id }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ item.book_title }}</div>
+                            <small class="text-muted font-monospace">{{ item.isbn or 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ item.student_name }}</div>
+                            <small class="badge bg-light text-secondary border">{{ item.register_number }}</small>
+                        </td>
+                        <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ item.department_name or '-' }}</span></td>
+                        <td class="text-danger fw-bold">{{ item.due_date|format_date }}</td>
+                        <td><span class="badge bg-danger">{{ item.overdue_days }} Days Past Due</span></td>
+                        <td class="fw-bold text-danger">{{ item.calculated_fine|currency }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('list_issued_books', tab='overdue') }}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-arrow-down-left me-1"></i> Return & Collect
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center py-4 text-success"><i class="bi bi-check-circle fs-3 d-block mb-1"></i> Excellent! There are no overdue books at this time.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TAB 3: Student Borrowing History -->
+    {% if tab == 'history' %}
+    <div class="custom-card">
+        <div class="custom-card-header">
+            <h5><i class="bi bi-person-lines-fill text-primary"></i> Report: Student Borrowing History</h5>
+            <!-- Student Filter Dropdown -->
+            <form method="GET" action="{{ url_for('reports') }}" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="tab" value="history">
+                <select name="student_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Students History</option>
+                    {% for st in students_list %}
+                    <option value="{{ st.student_id }}" {% if selected_student == st.student_id|string %}selected{% endif %}>
+                        {{ st.student_name }} ({{ st.register_number }})
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if selected_student %}
+                <a href="{{ url_for('reports', tab='history') }}" class="btn btn-sm btn-outline-secondary" title="Reset"><i class="bi bi-x-lg"></i></a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Issue ID</th>
+                        <th>Student</th>
+                        <th>Book Title</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Return Date</th>
+                        <th>Status</th>
+                        <th>Fine Paid</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in borrow_history %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">#{{ item.issue_id }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ item.student_name }}</div>
+                            <small class="badge bg-light text-secondary border">{{ item.register_number }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ item.book_title }}</div>
+                            <small class="text-muted font-monospace">{{ item.isbn or 'N/A' }}</small>
+                        </td>
+                        <td>{{ item.issue_date|format_date }}</td>
+                        <td>{{ item.due_date|format_date }}</td>
+                        <td>{{ item.return_date|format_date }}</td>
+                        <td>
+                            {% if item.status == 'Issued' %}
+                                <span class="badge-status issued">Issued</span>
+                            {% else %}
+                                <span class="badge-status returned">Returned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.calculated_fine > 0 %}
+                                <div>{{ item.calculated_fine|currency }}</div>
+                                <span class="badge {% if item.payment_status == 'Paid' %}bg-success{% else %}bg-warning text-dark{% endif %} small">
+                                    {{ item.payment_status }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center py-4 text-muted">No historical borrowing records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TAB 4: Fine Payment Audit Log -->
+    {% if tab == 'fines' %}
+    <div class="custom-card">
+        <div class="custom-card-header">
+            <h5><i class="bi bi-receipt text-primary"></i> Report: Overdue Fine Payments Audit Log</h5>
+            <span class="dbms-tag">fine_payments JOIN book_issues</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Payment ID</th>
+                        <th>Issue Ref</th>
+                        <th>Student</th>
+                        <th>Book Title</th>
+                        <th>Due Date</th>
+                        <th>Fine Amount</th>
+                        <th>Status</th>
+                        <th>Payment Date</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fine in fine_log %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">PAY#{{ fine.payment_id }}</td>
+                        <td class="fw-semibold">Issue #{{ fine.issue_id }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ fine.student_name }}</div>
+                            <small class="text-muted font-monospace">{{ fine.register_number }}</small>
+                        </td>
+                        <td><div class="fw-bold">{{ fine.book_title }}</div></td>
+                        <td>{{ fine.due_date|format_date }}</td>
+                        <td class="fw-bold {% if fine.payment_status == 'Paid' %}text-success{% else %}text-danger{% endif %}">
+                            {{ fine.fine_amount|currency }}
+                        </td>
+                        <td>
+                            {% if fine.payment_status == 'Paid' %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Paid</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ fine.payment_date|format_date }}</td>
+                        <td class="text-end">
+                            {% if fine.payment_status == 'Pending' %}
+                            <form method="POST" action="{{ url_for('pay_fine', payment_id=fine.payment_id) }}">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-cash me-1"></i> Mark as Paid
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-success small fw-semibold"><i class="bi bi-check-all"></i> Cleared</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center py-4 text-muted">No fine payment logs recorded yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TAB 5: Department & Category Analytics -->
+    {% if tab == 'analytics' %}
+    <div class="row g-4">
+        <!-- Department Table -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100">
+                <div class="custom-card-header">
+                    <h5><i class="bi bi-building text-primary"></i> Academic Department Issue Stats</h5>
+                    <span class="dbms-tag">view_department_issue_stats</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th class="text-center">Students</th>
+                                <th class="text-center">Total Loans</th>
+                                <th class="text-center">Active Loans</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in dept_analytics %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-6">
+                                        {{ d.department_name }}
+                                    </span>
+                                </td>
+                                <td class="text-center fw-semibold">{{ d.total_students }}</td>
+                                <td class="text-center fw-semibold">{{ d.total_issues_count }}</td>
+                                <td class="text-center">
+                                    {% if d.active_issues_count > 0 %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle">{{ d.active_issues_count }} Active</span>
+                                    {% else %}
+                                    <span class="text-muted">0</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Table -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100">
+                <div class="custom-card-header">
+                    <h5><i class="bi bi-tags-fill text-primary"></i> Category Inventory Distribution</h5>
+                    <span class="dbms-tag">GROUP BY category_name</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Category Name</th>
+                                <th class="text-center">Titles</th>
+                                <th class="text-center">Total Copies</th>
+                                <th class="text-center">Available</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in cat_analytics %}
+                            <tr>
+                                <td class="fw-semibold text-dark">{{ c.category_name }}</td>
+                                <td class="text-center">{{ c.total_titles }}</td>
+                                <td class="text-center fw-bold">{{ c.total_copies }}</td>
+                                <td class="text-center text-success fw-bold">{{ c.available_copies }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TAB 6: DBMS Concepts & Viva Guide -->
+    {% if tab == 'dbms' %}
+    <div class="custom-card mb-4">
+        <div class="custom-card-header bg-primary text-white">
+            <h5 class="text-white"><i class="bi bi-mortarboard-fill me-2"></i> DBMS Concepts Viva & Demonstration Guide</h5>
+            <span class="badge bg-white text-primary">B.Tech AI & Data Science Project</span>
+        </div>
+        <div class="custom-card-body p-4">
+            
+            <div class="alert alert-primary mb-4">
+                <strong>Project Title:</strong> Automated Library Book Tracking and Management System<br>
+                <strong>Technology Stack:</strong> Flask (Python), MySQL 8.0, HTML5, CSS3, Bootstrap 5, JavaScript, Chart.js<br>
+                <strong>Database Name:</strong> <code>library_management_db</code> (8 Normalized Tables)
+            </div>
+
+            <!-- Concepts Accordion -->
+            <div class="accordion" id="dbmsAccordion">
+                
+                <!-- 1. Schema & Constraints -->
+                <div class="accordion-item mb-2 border rounded">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#c1">
+                            <i class="bi bi-diagram-3-fill text-primary me-2"></i> 1. Relational Schema & Constraints (PK, FK, CHECK, UNIQUE, NOT NULL)
+                        </button>
+                    </h2>
+                    <div id="c1" class="accordion-collapse collapse show">
+                        <div class="accordion-body">
+                            <p>All 8 entities are implemented with strict relational integrity:</p>
+                            <ul>
+                                <li><strong>Primary Keys (PK):</strong> Every table uses <code>AUTO_INCREMENT PRIMARY KEY</code> for surrogate key identification.</li>
+                                <li><strong>Foreign Keys (FK):</strong> Cascading and restrict rules maintain referential integrity (e.g., <code>book_issues.book_id -> books.book_id</code>).</li>
+                                <li><strong>CHECK Constraints:</strong> 
+                                    <code>CHECK (total_copies >= 0)</code>, 
+                                    <code>CHECK (available_copies >= 0)</code>, 
+                                    <code>CHECK (available_copies <= total_copies)</code>, 
+                                    <code>CHECK (year_of_study BETWEEN 1 AND 4)</code>, and <code>CHECK (fine_amount >= 0)</code>.
+                                </li>
+                                <li><strong>UNIQUE Constraints:</strong> <code>books.isbn</code>, <code>students.register_number</code>, <code>students.email</code>, <code>departments.department_name</code>, <code>categories.category_name</code>.</li>
+                            </ul>
+                            <div class="sql-snippet">
+-- Example Table DDL with CHECK & FK Constraints
+CREATE TABLE books (
+    book_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    isbn VARCHAR(20) UNIQUE,
+    author_id INT,
+    category_id INT,
+    total_copies INT NOT NULL DEFAULT 1,
+    available_copies INT NOT NULL DEFAULT 1,
+    CONSTRAINT fk_books_author FOREIGN KEY (author_id) REFERENCES authors(author_id),
+    CONSTRAINT books_chk_total_copies CHECK (total_copies >= 0),
+    CONSTRAINT books_chk_available_copies CHECK (available_copies >= 0),
+    CONSTRAINT books_chk_available_lte_total CHECK (available_copies <= total_copies)
+);
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Normalization -->
+                <div class="accordion-item mb-2 border rounded">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c2">
+                            <i class="bi bi-layers-fill text-primary me-2"></i> 2. Normalization Analysis (1NF to 3NF)
+                        </button>
+                    </h2>
+                    <div id="c2" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><strong>First Normal Form (1NF):</strong> All attributes contain atomic (indivisible) values. There are no repeating groups or multivalued columns.</li>
+                                <li><strong>Second Normal Form (2NF):</strong> Satisfies 1NF, and all non-key attributes are fully functionally dependent on the entire primary key (no partial dependencies).</li>
+                                <li><strong>Third Normal Form (3NF):</strong> Satisfies 2NF, and no non-key attribute depends transitively on another non-key attribute. Authors, Categories, and Departments are isolated into separate normalized tables instead of repeating text fields.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. SQL Joins & Aggregates -->
+                <div class="accordion-item mb-2 border rounded">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c3">
+                            <i class="bi bi-funnel-fill text-primary me-2"></i> 3. INNER JOIN, LEFT JOIN, GROUP BY, HAVING, and Aggregates
+                        </button>
+                    </h2>
+                    <div id="c3" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p>Demonstrated in <code>view_issued_books_details</code> and <code>view_department_issue_stats</code>:</p>
+                            <div class="sql-snippet">
+-- Query combining INNER JOIN, LEFT JOIN, GROUP BY, and Aggregates
+SELECT 
+    d.department_name,
+    COUNT(DISTINCT s.student_id) AS total_students,
+    COUNT(bi.issue_id) AS total_issues_count,
+    COALESCE(SUM(CASE WHEN bi.status = 'Issued' THEN 1 ELSE 0 END), 0) AS active_issues
+FROM departments d
+LEFT JOIN students s ON d.department_id = s.department_id
+LEFT JOIN book_issues bi ON s.student_id = bi.student_id
+GROUP BY d.department_id, d.department_name
+HAVING total_students >= 0;
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Views & Stored Procedures -->
+                <div class="accordion-item mb-2 border rounded">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c4">
+                            <i class="bi bi-code-square text-primary me-2"></i> 4. Database Views & Stored Procedures
+                        </button>
+                    </h2>
+                    <div id="c4" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><strong>Views:</strong> 
+                                    <code>view_book_details</code>, 
+                                    <code>view_issued_books_details</code>, 
+                                    <code>view_overdue_books</code>, and 
+                                    <code>view_department_issue_stats</code> simplify complex join queries into virtual tables.
+                                </li>
+                                <li><strong>Stored Procedures:</strong> 
+                                    <code>sp_issue_book</code> and <code>sp_return_book</code> encapsulate multi-step transactions and fine calculation algorithms inside the database engine.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Triggers & ACID Transactions -->
+                <div class="accordion-item border rounded">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c5">
+                            <i class="bi bi-shield-check text-primary me-2"></i> 5. Triggers & ACID Transactions
+                        </button>
+                    </h2>
+                    <div id="c5" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <ul>
+                                <li><strong>Atomicity:</strong> Book issuance and copy decrement run inside a single transaction block. If an error occurs, <code>conn.rollback()</code> undoes all partial updates.</li>
+                                <li><strong>Consistency:</strong> The CHECK constraints and triggers guarantee <code>available_copies >= 0</code> and <code>available_copies <= total_copies</code>.</li>
+                                <li><strong>Triggers:</strong> <code>trg_prevent_negative_copies</code>, <code>trg_decrement_copies_after_issue</code>, and <code>trg_increment_copies_after_return</code> automatically sync book quantities.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

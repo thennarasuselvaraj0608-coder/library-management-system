@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Issued Books - Library Management System{% endblock %}
+{% block page_title %}Issued Books & Returns Tracking{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- Header & Action Buttons -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Circulation Desk: Issued Books</h4>
+            <p class="text-muted mb-0 small">Monitor active book loans, track overdue items, and process book returns.</p>
+        </div>
+        <a href="{{ url_for('issue_book') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Issue New Book
+        </a>
+    </div>
+
+    <!-- Filter Tabs & Search Bar -->
+    <div class="custom-card mb-4">
+        <div class="custom-card-body p-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <!-- Tabs -->
+                <ul class="nav nav-pills gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link {% if tab == 'active' %}active{% endif %}" href="{{ url_for('list_issued_books', tab='active', search=search) }}">
+                            <i class="bi bi-clock me-1"></i> Active Loans
+                            <span class="badge {% if tab == 'active' %}bg-white text-primary{% else %}bg-secondary-subtle text-secondary{% endif %} ms-1">
+                                {{ counts.active }}
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if tab == 'overdue' %}active bg-danger text-white{% endif %}" href="{{ url_for('list_issued_books', tab='overdue', search=search) }}">
+                            <i class="bi bi-exclamation-triangle me-1"></i> Overdue Books
+                            <span class="badge {% if tab == 'overdue' %}bg-white text-danger{% else %}bg-danger text-white{% endif %} ms-1">
+                                {{ counts.overdue }}
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if tab == 'returned' %}active{% endif %}" href="{{ url_for('list_issued_books', tab='returned', search=search) }}">
+                            <i class="bi bi-check2-circle me-1"></i> Returned History
+                            <span class="badge {% if tab == 'returned' %}bg-white text-primary{% else %}bg-secondary-subtle text-secondary{% endif %} ms-1">
+                                {{ counts.returned }}
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if tab == 'all' %}active{% endif %}" href="{{ url_for('list_issued_books', tab='all', search=search) }}">
+                            <i class="bi bi-list-ul me-1"></i> All Transactions
+                            <span class="badge {% if tab == 'all' %}bg-white text-primary{% else %}bg-secondary-subtle text-secondary{% endif %} ms-1">
+                                {{ counts.all }}
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Search Input -->
+                <form method="GET" action="{{ url_for('list_issued_books') }}" class="d-flex gap-2">
+                    <input type="hidden" name="tab" value="{{ tab }}">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control form-control-sm" 
+                               placeholder="Search title, student, reg. no..." 
+                               value="{{ search }}" style="min-width: 240px;">
+                        <button class="btn btn-sm btn-primary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    {% if search %}
+                    <a href="{{ url_for('list_issued_books', tab=tab) }}" class="btn btn-sm btn-outline-secondary" title="Clear Search">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table Card -->
+    <div class="custom-card">
+        <div class="custom-card-header">
+            <h5>
+                <i class="bi bi-journal-arrow-up text-primary"></i> 
+                Circulation Records
+                <span class="badge bg-secondary-subtle text-secondary fs-6 ms-2">{{ issues|length }} Displayed</span>
+            </h5>
+            <div class="d-flex align-items-center gap-2">
+                <input type="text" id="tableLiveSearch" class="form-control form-control-sm" placeholder="Live filter..." style="max-width: 180px;">
+                <span class="dbms-tag">view_issued_books_details</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-custom table-hover table-searchable align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">ID</th>
+                        <th>Book Information</th>
+                        <th>Student Details</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Overdue / Fines</th>
+                        <th class="text-end" style="width: 150px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in issues %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">#{{ issue.issue_id }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ issue.book_title }}</div>
+                            <small class="text-muted font-monospace">ISBN: {{ issue.isbn or 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">{{ issue.student_name }}</div>
+                            <div class="small">
+                                <span class="badge bg-light text-secondary border">{{ issue.register_number }}</span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ issue.department_name or '-' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div>{{ issue.issue_date|format_date }}</div>
+                            <small class="text-muted">By {{ issue.librarian_name }}</small>
+                        </td>
+                        <td>
+                            <div class="{% if issue.status == 'Issued' and issue.overdue_days > 0 %}text-danger fw-bold{% else %}fw-semibold{% endif %}">
+                                {{ issue.due_date|format_date }}
+                            </div>
+                            {% if issue.status == 'Returned' and issue.return_date %}
+                            <small class="text-success"><i class="bi bi-check me-1"></i>Returned: {{ issue.return_date|format_date }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if issue.status == 'Issued' %}
+                                {% if issue.overdue_days > 0 %}
+                                    <span class="badge-status overdue">
+                                        <i class="bi bi-exclamation-circle-fill"></i> Overdue ({{ issue.overdue_days }}d)
+                                    </span>
+                                {% else %}
+                                    <span class="badge-status issued">
+                                        <i class="bi bi-arrow-up-right"></i> Active Loan
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge-status returned">
+                                    <i class="bi bi-check2-circle"></i> Returned
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if issue.calculated_fine > 0 %}
+                                <div class="fw-bold text-danger">{{ issue.calculated_fine|currency }}</div>
+                                {% if issue.payment_status == 'Paid' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="bi bi-check-circle me-1"></i> Paid
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                        <i class="bi bi-clock me-1"></i> Pending
+                                    </span>
+                                    {% if issue.payment_id %}
+                                    <form method="POST" action="{{ url_for('pay_fine', payment_id=issue.payment_id) }}" class="d-inline ms-1">
+                                        <button type="submit" class="btn btn-sm btn-outline-success py-0 px-1" title="Mark Fine Paid" style="font-size: 0.75rem;">
+                                            Pay
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted small">No Fine</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if issue.status == 'Issued' %}
+                            <button class="btn btn-sm btn-primary"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#returnBookModal"
+                                    data-issue-id="{{ issue.issue_id }}"
+                                    data-book-title="{{ issue.book_title }}"
+                                    data-student-name="{{ issue.student_name }}"
+                                    data-reg-no="{{ issue.register_number }}"
+                                    data-due-date="{{ issue.due_date|format_date }}"
+                                    data-overdue-days="{{ issue.overdue_days }}"
+                                    data-fine="{{ issue.calculated_fine }}">
+                                <i class="bi bi-arrow-down-left me-1"></i> Return Book
+                            </button>
+                            {% else %}
+                            <span class="text-success small fw-semibold"><i class="bi bi-check-all"></i> Closed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-x fs-1 d-block mb-2 text-secondary"></i>
+                            <h5>No circulation records found</h5>
+                            <p class="small text-muted mb-3">No records match the current filter tab or search keywords.</p>
+                            <a href="{{ url_for('issue_book') }}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-arrow-up-right me-1"></i> Issue a Book
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Return Book Modal -->
+<div class="modal fade" id="returnBookModal" tabindex="-1" aria-labelledby="returnBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="returnBookForm" method="POST" action="">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="returnBookModalLabel">
+                        <i class="bi bi-arrow-down-left-circle me-1"></i> Process Book Return
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="text-muted small">Book Title</label>
+                        <h6 class="fw-bold mb-0 text-dark" id="modalBookTitle">-</h6>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="text-muted small">Borrower</label>
+                            <div class="fw-semibold" id="modalStudent">-</div>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small">Due Date</label>
+                            <div class="fw-semibold" id="modalDueDate">-</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small">Loan Status</label>
+                        <div id="modalOverdueBadge"></div>
+                    </div>
+
+                    <!-- Overdue Fine Alert Section -->
+                    <div class="alert alert-warning p-3 border-warning" id="modalFineSection" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold text-dark d-block">Overdue Fine Incurred:</span>
+                                <small class="text-secondary">Rate: ₹5.00 per day past due</small>
+                            </div>
+                            <span class="fs-4 fw-bold text-danger" id="modalFineAmount">₹0.00</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="paidNowSwitch" name="paid_now" value="yes" checked>
+                            <label class="form-check-label fw-semibold text-dark" for="paidNowSwitch">
+                                Fine paid in cash / UPI right now
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-light p-3 rounded small text-secondary">
+                        <i class="bi bi-info-circle me-1 text-primary"></i>
+                        Returning this book will automatically increment <code>books.available_copies</code> by 1 in an ACID transaction.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2-circle me-1"></i> Confirm & Complete Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
